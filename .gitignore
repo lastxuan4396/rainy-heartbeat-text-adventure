@@ -8,3 +8,6 @@ output/
 .DS_Store
 Thumbs.db
 *.log
+
+# Local helper clones
+portfolio_repos/
