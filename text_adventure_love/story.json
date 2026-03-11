@@ -1,0 +1,349 @@
+{
+  "meta": {
+    "title": "雨夜心跳 · 文字冒险",
+    "subtitle": "在暧昧和勇气之间，做出你的选择。",
+    "startNode": "opening",
+    "saveKey": "rainy-heartbeat-v2-save"
+  },
+  "stats": [
+    { "key": "warmth", "label": "温度", "min": -2, "max": 10 },
+    { "key": "courage", "label": "勇气", "min": -2, "max": 10 },
+    { "key": "sincerity", "label": "真诚", "min": -2, "max": 10 }
+  ],
+  "visuals": {
+    "backgrounds": {
+      "stationRain": "./assets/backgrounds/city-night.jpg",
+      "storeNight": "./assets/backgrounds/skyline-night.jpg",
+      "stageNight": "./assets/backgrounds/seaside-night.jpg"
+    },
+    "portraits": {
+      "linyueNeutral": "./assets/portraits/linyue-neutral.png",
+      "linyueSmile": "./assets/portraits/linyue-smile.png",
+      "linyueShy": "./assets/portraits/linyue-shy.png"
+    }
+  },
+  "nodes": {
+    "opening": {
+      "badge": "第一幕",
+      "act": "act1",
+      "background": "stationRain",
+      "portrait": "linyueNeutral",
+      "title": "雨夜站台",
+      "text": "晚自习后，突如其来的大雨把你和林月困在同一个公交站台。\n她的书包已经湿了半边，正抱着臂膀发呆。",
+      "options": [
+        {
+          "text": "把伞递给她，一起走到站台里侧。",
+          "effects": { "warmth": 1, "courage": 1 },
+          "feedback": "她接过伞时抬眼看你，表情明显放松了些。",
+          "recommended": true,
+          "next": "umbrella_walk"
+        },
+        {
+          "text": "提议去便利店躲雨，顺便聊聊天。",
+          "effects": { "courage": 1, "sincerity": 1 },
+          "feedback": "她点点头，跟着你跑向亮着暖灯的街角。",
+          "next": "store_chat"
+        },
+        {
+          "text": "先沉默，回家后再发消息解释。",
+          "effects": { "sincerity": 1, "warmth": -1 },
+          "feedback": "她没说什么，只是把视线移向雨幕。",
+          "next": "detour"
+        },
+        {
+          "text": "（NG+）故意冲进雨里转一圈，逗她笑。",
+          "requiresNewGamePlus": true,
+          "effects": { "courage": 2, "sincerity": -1 },
+          "addReckless": 1,
+          "feedback": "她被你逗笑了，但也皱着眉说你太乱来了。",
+          "next": "umbrella_walk"
+        }
+      ]
+    },
+    "umbrella_walk": {
+      "badge": "第二幕",
+      "act": "act2",
+      "background": "stationRain",
+      "portrait": "linyueSmile",
+      "title": "同一把伞",
+      "text": "雨声很近，你们肩膀偶尔碰到。林月笑着说，你今天好像比平时更大胆。",
+      "options": [
+        {
+          "text": "把她送到小区门口，再目送她上楼。",
+          "effects": { "warmth": 1 },
+          "feedback": "她在楼道口回头挥了挥手，笑得很轻。",
+          "recommended": true,
+          "next": "rehearsal"
+        },
+        {
+          "text": "在路口挥手告别，怕自己表现得太明显。",
+          "effects": { "courage": 1, "warmth": -1 },
+          "feedback": "你故作轻松地笑了笑，心里却有点空。",
+          "next": "rehearsal"
+        },
+        {
+          "text": "（NG+）扯住她袖口，小声问她是不是也在意你。",
+          "requiresNewGamePlus": true,
+          "effects": { "warmth": 1, "courage": 2, "sincerity": -1 },
+          "addReckless": 1,
+          "feedback": "她愣了一下，脸红着躲开视线。",
+          "next": "rehearsal"
+        }
+      ]
+    },
+    "store_chat": {
+      "badge": "第二幕",
+      "act": "act2",
+      "background": "storeNight",
+      "portrait": "linyueSmile",
+      "title": "暖灯便利店",
+      "text": "你们坐在热饮区，她说最近社团演出压力很大，怕上台失误。",
+      "options": [
+        {
+          "text": "认真听她说完，告诉她你会去现场支持。",
+          "effects": { "warmth": 1, "sincerity": 1 },
+          "feedback": "她轻轻松了口气，说有你在会安心很多。",
+          "recommended": true,
+          "next": "rehearsal"
+        },
+        {
+          "text": "故意开点玩笑，让她先放松下来。",
+          "effects": { "courage": 1 },
+          "feedback": "她被你逗笑，紧张感确实淡了一点。",
+          "next": "rehearsal"
+        },
+        {
+          "text": "（NG+）提议陪她走一次完整彩排线路。",
+          "requiresNewGamePlus": true,
+          "effects": { "warmth": 1, "sincerity": 1 },
+          "feedback": "她说这主意超实用，当晚就把路线拍给你。",
+          "next": "rehearsal"
+        }
+      ]
+    },
+    "detour": {
+      "badge": "第二幕",
+      "act": "act2",
+      "background": "stationRain",
+      "portrait": "linyueShy",
+      "title": "延迟的消息",
+      "text": "你回到家才发消息：\"刚才不是不想理你，是我有点紧张。\"\n林月回了一个表情包，问你周末有没有空。",
+      "options": [
+        {
+          "text": "直接约她出来，当面把话说清楚。",
+          "effects": { "sincerity": 2, "courage": 1 },
+          "feedback": "她很快回复了地点，语气明显认真起来。",
+          "recommended": true,
+          "next": "message_night"
+        },
+        {
+          "text": "继续在聊天框里打太极，不正面回应。",
+          "effects": { "sincerity": -1 },
+          "feedback": "对话没有吵起来，却也慢慢冷了下去。",
+          "next": "message_night"
+        }
+      ]
+    },
+    "rehearsal": {
+      "badge": "第三幕",
+      "act": "act3",
+      "background": "stageNight",
+      "portrait": "linyueShy",
+      "title": "彩排前夜",
+      "text": "演出前一天，她发来语音：\"你会来吗？我有点怕。\"",
+      "options": [
+        {
+          "text": "回复：\"我会在第一排。你抬头就能看到我。\"",
+          "effects": { "warmth": 1, "courage": 1 },
+          "feedback": "她回了个小太阳表情，末尾加了句“那我放心了”。",
+          "recommended": true,
+          "next": "festival"
+        },
+        {
+          "text": "只发一句加油，告诉她你可能会迟到。",
+          "effects": { "sincerity": 1 },
+          "feedback": "她说没关系，但语音里的停顿变长了。",
+          "next": "festival"
+        },
+        {
+          "text": "（NG+）把你写的手谱拍给她：\"这段旋律像你。\"",
+          "requiresNewGamePlus": true,
+          "effects": { "sincerity": 2, "courage": 1 },
+          "setFlags": { "moonToken": true },
+          "feedback": "她沉默几秒后回你：\"这句我会记一辈子。\"",
+          "next": "festival"
+        }
+      ]
+    },
+    "message_night": {
+      "badge": "第三幕",
+      "act": "act3",
+      "background": "storeNight",
+      "portrait": "linyueNeutral",
+      "title": "夜风和奶茶",
+      "text": "你们在校门口的小店碰面。她低头戳着奶茶杯，说其实她也在等你主动。",
+      "options": [
+        {
+          "text": "承认自己一直在意她，只是怕太快。",
+          "effects": { "warmth": 1, "sincerity": 1 },
+          "feedback": "她抬头看你很久，随后轻轻点了点头。",
+          "recommended": true,
+          "next": "festival"
+        },
+        {
+          "text": "把话题岔开，说先做朋友也挺好。",
+          "effects": { "warmth": 1 },
+          "feedback": "气氛变得礼貌，却没了刚才的热度。",
+          "next": "festival"
+        },
+        {
+          "text": "（NG+）提议一起写一句只属于今晚的歌词。",
+          "requiresNewGamePlus": true,
+          "effects": { "warmth": 1, "sincerity": 2 },
+          "setFlags": { "moonToken": true },
+          "feedback": "她笑着把你写的那句拍进了收藏夹。",
+          "next": "festival"
+        }
+      ]
+    },
+    "festival": {
+      "badge": "终幕",
+      "act": "act3",
+      "background": "stageNight",
+      "portrait": "linyueSmile",
+      "title": "演出散场",
+      "text": "人群散去，只剩舞台边的暖光。林月抱着花束看着你，像在等最后一句话。",
+      "options": [
+        {
+          "text": "鼓起勇气，当面说出心意。",
+          "effects": { "courage": 2, "sincerity": 1 },
+          "setFlags": { "finalChoice": "confess" },
+          "feedback": "她的眼神一下子亮了起来，像终于等到了答案。",
+          "recommended": true,
+          "next": "ending_check"
+        },
+        {
+          "text": "把心意写在便签里，轻轻塞进她手里。",
+          "effects": { "warmth": 1, "sincerity": 1 },
+          "setFlags": { "finalChoice": "note" },
+          "feedback": "她把便签折好放进口袋，呼吸也慢了下来。",
+          "next": "ending_check"
+        },
+        {
+          "text": "什么也不说，约她下次再见。",
+          "effects": { "warmth": 1 },
+          "setFlags": { "finalChoice": "retreat" },
+          "feedback": "你们都笑着点头，但那句最重要的话仍留在喉咙里。",
+          "next": "ending_check"
+        },
+        {
+          "text": "（NG+）站上空舞台，和她轻声合唱一句。",
+          "requiresNewGamePlus": true,
+          "effects": { "warmth": 2, "sincerity": 2, "courage": 1 },
+          "setFlags": { "finalChoice": "duet", "duetMoment": true },
+          "feedback": "她几乎是笑着流泪，说这句歌她会一直唱下去。",
+          "next": "ending_check"
+        }
+      ]
+    }
+  },
+  "endings": {
+    "sweet": {
+      "background": "stageNight",
+      "portrait": "linyueSmile",
+      "title": "甜蜜结局：同频心动",
+      "text": "她笑着打断你：\"我等这句话很久了。\"\n你们并肩走出礼堂，雨停了，路灯把影子拉得很近。",
+      "unlockNote": "你解锁了「甜蜜结局」。"
+    },
+    "friend": {
+      "background": "stageNight",
+      "portrait": "linyueNeutral",
+      "title": "挚友结局：慢慢靠近",
+      "text": "她说：\"你真的很真诚，我很珍惜你。\"\n你们还没立刻成为恋人，但约好了继续把彼此放在生活的前排。",
+      "unlockNote": "你解锁了「挚友结局」。"
+    },
+    "missed": {
+      "background": "stageNight",
+      "portrait": "linyueShy",
+      "title": "错过结局：下一次再勇敢",
+      "text": "她礼貌地点头，和你并肩走了一段。\n你们都明白今晚还差一点点勇气，但故事并没有就此结束。",
+      "unlockNote": "你解锁了「错过结局」。"
+    },
+    "true": {
+      "background": "stageNight",
+      "portrait": "linyueSmile",
+      "title": "隐藏真结局：雨停以后",
+      "text": "你们在空舞台上并肩唱完最后一句。\n她说：\"谢谢你没再错过。\" 从此以后，你们把彼此写进了每个未来的计划里。",
+      "unlockNote": "你解锁了隐藏「真结局」。"
+    },
+    "bad": {
+      "background": "stageNight",
+      "portrait": "linyueShy",
+      "title": "隐藏坏结局：过火的勇敢",
+      "text": "你把话说得太急太满，反而让她后退了一步。\n她轻声说先到这里吧，你才意识到真诚比冲动更重要。",
+      "unlockNote": "你解锁了隐藏「坏结局」。"
+    }
+  },
+  "randomEvents": {
+    "act1": [
+      {
+        "id": "act1_ticket",
+        "text": "你在长椅下捡到她掉的演出票根，顺手递回去。",
+        "effects": { "warmth": 1 },
+        "feedback": "随机事件：她笑着说你总能注意到细节。"
+      },
+      {
+        "id": "act1_wind",
+        "text": "一阵风吹乱她额前碎发，你下意识替她挡了一下雨。",
+        "effects": { "courage": 1 },
+        "feedback": "随机事件：你比自己想象中更果断。"
+      },
+      {
+        "id": "act1_notebook",
+        "text": "她担心笔记被雨打湿，你把外套垫在了包外层。",
+        "effects": { "sincerity": 1 },
+        "feedback": "随机事件：她看你的眼神更柔和了。"
+      }
+    ],
+    "act2": [
+      {
+        "id": "act2_rumor",
+        "text": "同学起哄你们像在约会，林月有点不好意思地转开话题。",
+        "effects": { "courage": 1, "sincerity": -1 },
+        "feedback": "随机事件：气氛暧昧，但分寸更重要。"
+      },
+      {
+        "id": "act2_drink",
+        "text": "你把最后一杯热可可让给了她，她坚持分你一半。",
+        "effects": { "warmth": 1 },
+        "feedback": "随机事件：你们都在悄悄照顾对方。"
+      },
+      {
+        "id": "act2_note",
+        "text": "她把演出流程发给你，最后加了一句“别迟到”。",
+        "effects": { "sincerity": 1 },
+        "feedback": "随机事件：你们开始把彼此安排进日程。"
+      }
+    ],
+    "act3": [
+      {
+        "id": "act3_light",
+        "text": "彩排灯突然熄灭，你摸黑帮她找到了掉落的麦夹。",
+        "effects": { "courage": 1 },
+        "feedback": "随机事件：关键时刻你总能撑住她。"
+      },
+      {
+        "id": "act3_breeze",
+        "text": "散场后风有点凉，她把围巾往你这边分了一半。",
+        "effects": { "warmth": 1 },
+        "feedback": "随机事件：她也在主动靠近你。"
+      },
+      {
+        "id": "act3_whisper",
+        "text": "后台很吵，她凑近你耳边问：\"你刚刚那句是真的吗？\"",
+        "effects": { "sincerity": 1 },
+        "feedback": "随机事件：今晚每句话都变得更重要。"
+      }
+    ]
+  }
+}
