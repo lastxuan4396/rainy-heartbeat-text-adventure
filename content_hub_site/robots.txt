@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://is.gd/dianjidefanplus2/sitemap.xml

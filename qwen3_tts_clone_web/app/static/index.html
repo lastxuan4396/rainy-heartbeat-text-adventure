@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qwen3-TTS Voice Clone Demo</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div class="backdrop backdrop-a"></div>
+  <div class="backdrop backdrop-b"></div>
+
+  <main class="layout">
+    <section class="hero card">
+      <p class="eyebrow">Qwen3-TTS Voice Clone Demo</p>
+      <h1>上传一段样音，把它变成一个可复用的声音。</h1>
+      <p class="lead">
+        这个 demo 走的是官方云端 voice cloning + speech synthesis API。
+        页面负责交互，后端做代理，这样不会把 API Key 直接暴露到浏览器里。
+      </p>
+
+      <div class="feature-grid">
+        <article>
+          <h2>Step 1</h2>
+          <p>上传 10-20 秒左右的清晰人声，创建 voice token。</p>
+        </article>
+        <article>
+          <h2>Step 2</h2>
+          <p>输入文本，调用同一个模型生成音频。</p>
+        </article>
+        <article>
+          <h2>Step 3</h2>
+          <p>浏览器里试听、下载，继续迭代样音和文本。</p>
+        </article>
+      </div>
+
+      <div class="notice">
+        <strong>注意</strong>
+        <p>只对你自己的声音，或已获得明确授权的声音执行克隆。不要拿去冒充别人。</p>
+      </div>
+    </section>
+
+    <section class="controls">
+      <div class="card stack">
+        <div class="section-head">
+          <p class="kicker">Shared Settings</p>
+          <h2>接口与模型</h2>
+        </div>
+
+        <label class="field">
+          <span>DashScope API Key</span>
+          <input id="api-key" type="password" placeholder="sk-..." autocomplete="off">
+          <small>本地 demo 可以直接输在这里；正式部署建议改用环境变量。</small>
+        </label>
+
+        <div class="inline-fields">
+          <label class="field">
+            <span>Region</span>
+            <select id="region">
+              <option value="international">International / Singapore</option>
+              <option value="mainland">Mainland China / Beijing</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Model</span>
+            <input id="target-model" type="text" value="qwen3-tts-vc-2026-01-22">
+          </label>
+        </div>
+      </div>
+
+      <form id="clone-form" class="card stack">
+        <div class="section-head">
+          <p class="kicker">Step 1</p>
+          <h2>克隆声音</h2>
+        </div>
+
+        <label class="field">
+          <span>参考音频</span>
+          <input id="sample" name="sample" type="file" accept=".wav,.mp3,.m4a,.aac,.flac,.ogg,audio/*" required>
+          <small>建议单人、干净、少噪音，10-20 秒内，尽量不要有背景音乐。</small>
+        </label>
+
+        <label class="field">
+          <span>Voice 名称前缀</span>
+          <input id="preferred-name" type="text" placeholder="例如：xiaoxuan-demo">
+        </label>
+
+        <label class="checkbox">
+          <input id="consent" type="checkbox" required>
+          <span>我确认自己拥有该声音的使用权，或已取得明确授权。</span>
+        </label>
+
+        <button id="clone-button" class="primary" type="submit">创建 Voice Token</button>
+      </form>
+
+      <form id="synthesize-form" class="card stack">
+        <div class="section-head">
+          <p class="kicker">Step 2</p>
+          <h2>生成音频</h2>
+        </div>
+
+        <label class="field">
+          <span>Voice Token</span>
+          <input id="voice-token" type="text" placeholder="先执行上一步，成功后会自动填入" required>
+          <small>也可以手动粘贴之前创建过的 voice token。</small>
+        </label>
+
+        <div class="inline-fields">
+          <label class="field">
+            <span>语言</span>
+            <select id="language-type">
+              <option value="Chinese">Chinese</option>
+              <option value="English">English</option>
+              <option value="Auto">Auto</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>要说的话</span>
+          <textarea id="text-input" rows="7" placeholder="输入你想让这个声音读出来的文字..." required></textarea>
+        </label>
+
+        <button id="synthesize-button" class="primary" type="submit">生成音频</button>
+      </form>
+    </section>
+
+    <section class="card result">
+      <div class="section-head">
+        <p class="kicker">Result</p>
+        <h2>状态与试听</h2>
+      </div>
+
+      <div id="status" class="status idle">等待操作。</div>
+
+      <div class="result-grid">
+        <label class="field">
+          <span>最后一次 voice token</span>
+          <input id="last-voice" type="text" readonly>
+        </label>
+
+        <label class="field">
+          <span>最后一次 request_id</span>
+          <input id="request-id" type="text" readonly>
+        </label>
+      </div>
+
+      <div class="player">
+        <audio id="audio-player" controls></audio>
+        <a id="download-link" class="ghost disabled" href="#" target="_blank" rel="noopener noreferrer">打开音频链接</a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

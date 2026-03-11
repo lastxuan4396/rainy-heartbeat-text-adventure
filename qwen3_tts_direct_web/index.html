@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qwen3-TTS 一页版</title>
+  <style>
+    :root {
+      --bg: #080d14;
+      --bg-soft: #111a25;
+      --panel: rgba(13, 22, 33, 0.88);
+      --line: rgba(255, 255, 255, 0.1);
+      --text: #eef4ff;
+      --muted: #9fb0c6;
+      --hot: #ff8a2a;
+      --cool: #2ed7c4;
+      --ok: #8cefc3;
+      --err: #ffb3b3;
+      --warn: #ffe39b;
+      --shadow: 0 26px 56px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: "Bahnschrift", "Segoe UI Variable", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(255, 138, 42, 0.22), transparent 30%),
+        radial-gradient(circle at 100% 100%, rgba(46, 215, 196, 0.15), transparent 34%),
+        linear-gradient(180deg, #05080e 0%, #0a1220 100%);
+    }
+
+    main {
+      width: min(1120px, calc(100% - 28px));
+      margin: 24px auto 40px;
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 26px 24px;
+      grid-column: 1 / -1;
+    }
+
+    .hero h1 {
+      margin: 10px 0;
+      font-size: clamp(2rem, 5vw, 4.1rem);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      max-width: 11ch;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.62;
+      max-width: 70ch;
+    }
+
+    .tag {
+      margin: 0;
+      color: var(--cool);
+      letter-spacing: 0.15em;
+      font-size: 0.84rem;
+      text-transform: uppercase;
+    }
+
+    .stack {
+      padding: 22px;
+    }
+
+    .stack h2 {
+      margin: 8px 0 2px;
+      font-size: 1.35rem;
+    }
+
+    .desc {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 0.95rem;
+    }
+
+    input, textarea, select, button {
+      font: inherit;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: var(--bg-soft);
+      color: var(--text);
+      padding: 12px 13px;
+      outline: none;
+      transition: border-color 130ms ease, transform 130ms ease;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: rgba(46, 215, 196, 0.75);
+      transform: translateY(-1px);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 135px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .primary, .ghost {
+      border: none;
+      border-radius: 999px;
+      min-height: 48px;
+      padding: 0 18px;
+      cursor: pointer;
+      transition: transform 120ms ease, opacity 120ms ease;
+    }
+
+    .primary {
+      background: linear-gradient(135deg, var(--hot), #ffd26a);
+      color: #1b1a18;
+      font-weight: 700;
+    }
+
+    .ghost {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: var(--text);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .primary:hover, .ghost:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary:disabled, .ghost.disabled {
+      opacity: 0.52;
+      pointer-events: none;
+    }
+
+    .hint, .warn {
+      margin: 8px 0 0;
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.48;
+    }
+
+    .warn {
+      color: var(--warn);
+    }
+
+    .status {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 13px 14px;
+      margin-bottom: 14px;
+      line-height: 1.5;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .status.loading {
+      color: var(--warn);
+      border-color: rgba(255, 227, 155, 0.32);
+      background: rgba(255, 227, 155, 0.08);
+    }
+
+    .status.success {
+      color: var(--ok);
+      border-color: rgba(140, 239, 195, 0.3);
+      background: rgba(140, 239, 195, 0.08);
+    }
+
+    .status.error {
+      color: var(--err);
+      border-color: rgba(255, 179, 179, 0.35);
+      background: rgba(255, 179, 179, 0.08);
+    }
+
+    .foot-note {
+      grid-column: 1 / -1;
+      padding: 16px 18px;
+      border-radius: 18px;
+      border: 1px dashed rgba(255, 255, 255, 0.24);
+      color: var(--muted);
+      background: rgba(0, 0, 0, 0.2);
+      line-height: 1.56;
+    }
+
+    audio {
+      width: 100%;
+      margin: 10px 0 12px;
+    }
+
+    @media (max-width: 920px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card hero">
+      <p class="tag">QWEN3-TTS VC</p>
+      <h1>输入文字，直接生成克隆音色语音。</h1>
+      <p>这是单文件网页版。你填 API Key，先上传样音得到 <code>voice token</code>，再输入文本生成音频。页面不会把你的 key 存到本地文件。</p>
+      <p class="warn">只克隆你自己声音，或已获得明确授权的声音。不要用于冒充他人。</p>
+    </section>
+
+    <section class="card stack">
+      <h2>通用设置</h2>
+      <p class="desc">这部分会同时用于“克隆声音”和“文本合成”。</p>
+
+      <label>
+        <span>DashScope API Key</span>
+        <input id="api-key" type="password" placeholder="sk-..." autocomplete="off">
+      </label>
+
+      <div class="row">
+        <label>
+          <span>Region</span>
+          <select id="region">
+            <option value="international">international (Singapore)</option>
+            <option value="mainland">mainland (Beijing)</option>
+          </select>
+        </label>
+        <label>
+          <span>Model</span>
+          <input id="model" type="text" value="qwen3-tts-vc-2026-01-22">
+        </label>
+      </div>
+
+      <div class="status" id="status">等待操作。</div>
+      <label>
+        <span>最后 request_id</span>
+        <input id="request-id" type="text" readonly>
+      </label>
+    </section>
+
+    <section class="card stack">
+      <h2>Step 1: 克隆声音</h2>
+      <p class="desc">上传样音后会得到一个可复用的 <code>voice token</code>。</p>
+
+      <label>
+        <span>样音文件</span>
+        <input id="sample-file" type="file" accept=".wav,.mp3,.m4a,.aac,.flac,.ogg,audio/*">
+      </label>
+      <label>
+        <span>Voice 前缀（可选）</span>
+        <input id="prefix" type="text" placeholder="比如 xiaoxuan-voice">
+      </label>
+      <button id="clone-btn" class="primary" type="button">创建 Voice Token</button>
+      <p class="hint">建议样音 10~20 秒、单人、安静环境、无背景音乐。</p>
+
+      <label>
+        <span>Voice Token</span>
+        <input id="voice-token" type="text" placeholder="创建成功后自动填入，也可手动粘贴">
+      </label>
+    </section>
+
+    <section class="card stack">
+      <h2>Step 2: 生成音频</h2>
+      <p class="desc">输入文本后调用同一模型生成语音。</p>
+
+      <label>
+        <span>语言</span>
+        <select id="lang">
+          <option value="Chinese">Chinese</option>
+          <option value="English">English</option>
+          <option value="Auto">Auto</option>
+        </select>
+      </label>
+      <label>
+        <span>文本内容</span>
+        <textarea id="text" placeholder="在这里输入你想转换成语音的文本"></textarea>
+      </label>
+
+      <button id="speak-btn" class="primary" type="button">生成音频</button>
+      <audio id="audio" controls></audio>
+      <a id="audio-link" class="ghost disabled" href="#" target="_blank" rel="noopener noreferrer">打开原始音频链接</a>
+    </section>
+
+    <section class="foot-note">
+      如果点击后显示 <code>Failed to fetch</code>，一般是浏览器跨域限制或网络策略导致。
+      那就改用我给你做的后端版项目：<code>E:\Windows\Codex\qwen3_tts_clone_web</code>。
+    </section>
+  </main>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const reqEl = document.getElementById("request-id");
+    const audioEl = document.getElementById("audio");
+    const audioLinkEl = document.getElementById("audio-link");
+    const cloneBtn = document.getElementById("clone-btn");
+    const speakBtn = document.getElementById("speak-btn");
+
+    function setStatus(message, tone) {
+      statusEl.className = tone ? `status ${tone}` : "status";
+      statusEl.textContent = message;
+    }
+
+    function getBaseUrl() {
+      const region = document.getElementById("region").value;
+      return region === "mainland"
+        ? "https://dashscope.aliyuncs.com"
+        : "https://dashscope-intl.aliyuncs.com";
+    }
+
+    function getSharedConfig() {
+      const apiKey = document.getElementById("api-key").value.trim();
+      const model = document.getElementById("model").value.trim();
+      if (!apiKey) throw new Error("请先填写 API Key。");
+      if (!model) throw new Error("Model 不能为空。");
+      return { apiKey, model };
+    }
+
+    function setBusy(button, busy, busyText, idleText) {
+      button.disabled = busy;
+      button.textContent = busy ? busyText : idleText;
+    }
+
+    function parseError(payload) {
+      if (!payload || typeof payload !== "object") return "请求失败。";
+      const out = payload.output && typeof payload.output === "object" ? payload.output : {};
+      return payload.message || out.message || payload.code || out.code || "请求失败。";
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("读取音频文件失败。"));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function postJson(url, apiKey, payload) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(parseError(data));
+      return data;
+    }
+
+    cloneBtn.addEventListener("click", async () => {
+      try {
+        const { apiKey, model } = getSharedConfig();
+        const sample = document.getElementById("sample-file").files[0];
+        const prefixInput = document.getElementById("prefix").value.trim();
+        if (!sample) throw new Error("请先选择样音文件。");
+
+        setBusy(cloneBtn, true, "创建中...", "创建 Voice Token");
+        setStatus("正在上传样音并创建 voice token...", "loading");
+
+        const dataUrl = await fileToDataUrl(sample);
+        const payload = {
+          target_model: model,
+          prefix: prefixInput || `web-${Date.now().toString(36)}`,
+          url: dataUrl
+        };
+
+        const data = await postJson(
+          `${getBaseUrl()}/api/v1/customization/voices`,
+          apiKey,
+          payload
+        );
+
+        const voice = data.output && data.output.voice;
+        if (!voice) throw new Error("返回成功但没有 voice token。");
+
+        document.getElementById("voice-token").value = voice;
+        reqEl.value = data.request_id || "";
+        setStatus(`voice token 创建成功：${voice}`, "success");
+      } catch (err) {
+        setStatus(err.message || "创建 voice token 失败。", "error");
+      } finally {
+        setBusy(cloneBtn, false, "创建中...", "创建 Voice Token");
+      }
+    });
+
+    speakBtn.addEventListener("click", async () => {
+      try {
+        const { apiKey, model } = getSharedConfig();
+        const voice = document.getElementById("voice-token").value.trim();
+        const text = document.getElementById("text").value.trim();
+        const lang = document.getElementById("lang").value;
+
+        if (!voice) throw new Error("请先填入 voice token。");
+        if (!text) throw new Error("请输入文本内容。");
+
+        setBusy(speakBtn, true, "生成中...", "生成音频");
+        setStatus("正在生成音频...", "loading");
+
+        const data = await postJson(
+          `${getBaseUrl()}/api/v1/services/aigc/multimodal-generation/generation`,
+          apiKey,
+          {
+            model,
+            input: {
+              text,
+              voice,
+              language_type: lang
+            }
+          }
+        );
+
+        const audioUrl = data.output && data.output.audio && data.output.audio.url;
+        if (!audioUrl) throw new Error("返回成功但没有 audio.url。");
+
+        reqEl.value = data.request_id || "";
+        audioEl.src = audioUrl;
+        audioEl.load();
+        audioLinkEl.href = audioUrl;
+        audioLinkEl.classList.remove("disabled");
+        setStatus("音频已生成，可以直接试听。", "success");
+      } catch (err) {
+        setStatus(err.message || "生成音频失败。", "error");
+      } finally {
+        setBusy(speakBtn, false, "生成中...", "生成音频");
+      }
+    });
+  </script>
+</body>
+</html>
