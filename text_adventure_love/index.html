@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>雨夜心跳 · 文字冒险</title>
+  <style>
+    :root {
+      --bg-1: #1f1300;
+      --bg-2: #3b2200;
+      --card: #fff3d0;
+      --ink: #2f1b00;
+      --accent: #ffb703;
+      --accent-2: #fb8500;
+      --line: #c58a2f;
+      --muted: #7c5b22;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 20% 20%, #6b3f00 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, #8a4f00 0%, transparent 35%),
+        linear-gradient(165deg, var(--bg-1), var(--bg-2));
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .app {
+      width: min(860px, 100%);
+      background: var(--card);
+      border: 2px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 20px 55px rgb(0 0 0 / 40%);
+      overflow: hidden;
+    }
+
+    .top {
+      padding: 18px 20px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      color: #291500;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+      letter-spacing: 0.4px;
+      font-weight: 800;
+    }
+
+    .sub {
+      margin: 6px 0 0;
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      gap: 0;
+    }
+
+    .panel {
+      border-right: 1px solid #e6c585;
+      padding: 18px;
+      background: #ffeab7;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .stat {
+      margin: 10px 0;
+      display: grid;
+      gap: 6px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+
+    .bar {
+      height: 8px;
+      background: #f2d499;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ffa800, #ff6a00);
+      transition: width 180ms ease;
+    }
+
+    .history-box {
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 1px dashed #d6aa5d;
+      font-size: 0.84rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .story {
+      padding: 22px 22px 18px;
+      display: grid;
+      gap: 16px;
+      min-height: 440px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 10px;
+      background: #ffe3a1;
+      border: 1px solid #d59b3e;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      color: #684000;
+      width: fit-content;
+    }
+
+    .scene-title {
+      margin: 2px 0 0;
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      color: #3d2200;
+    }
+
+    .scene-text {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.72;
+      color: #402600;
+      white-space: pre-line;
+    }
+
+    .choices {
+      margin-top: auto;
+      display: grid;
+      gap: 10px;
+    }
+
+    .choice-btn,
+    .action-btn {
+      border: 1px solid #c18428;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 0.95rem;
+      text-align: left;
+      background: #fff7de;
+      color: #3a2200;
+      cursor: pointer;
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+    }
+
+    .choice-btn:hover,
+    .action-btn:hover {
+      background: #fff0c8;
+      transform: translateY(-1px);
+    }
+
+    .choice-btn.selected {
+      background: #ffd577;
+      border-color: #a36008;
+      box-shadow: inset 0 0 0 2px #ffecbe;
+    }
+
+    .action-btn {
+      width: fit-content;
+      min-width: 160px;
+      text-align: center;
+      font-weight: 700;
+      background: linear-gradient(180deg, #ffd56a, #ffb022);
+    }
+
+    .foot {
+      border-top: 1px solid #e8c487;
+      padding: 10px 18px;
+      font-size: 0.82rem;
+      color: #6f4f1a;
+      background: #ffedbd;
+    }
+
+    .ending-card {
+      background: #fff3d8;
+      border: 1px solid #d9a14c;
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .ending-title {
+      margin: 0 0 8px;
+      color: #5e3400;
+      font-size: 1.05rem;
+    }
+
+    @media (max-width: 760px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        border-right: none;
+        border-bottom: 1px solid #e6c585;
+      }
+
+      .story {
+        min-height: 360px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <h1 class="title">雨夜心跳 · 文字冒险</h1>
+      <p class="sub">在暧昧和勇气之间，做出你的选择。</p>
+    </header>
+
+    <section class="layout">
+      <aside class="panel">
+        <h2>关系状态</h2>
+        <div class="stat">
+          <div class="stat-row"><span>温度</span><span id="warmth-label">0</span></div>
+          <div class="bar"><div id="warmth-bar" class="bar-fill"></div></div>
+        </div>
+        <div class="stat">
+          <div class="stat-row"><span>勇气</span><span id="courage-label">0</span></div>
+          <div class="bar"><div id="courage-bar" class="bar-fill"></div></div>
+        </div>
+        <div class="stat">
+          <div class="stat-row"><span>真诚</span><span id="sincerity-label">0</span></div>
+          <div class="bar"><div id="sincerity-bar" class="bar-fill"></div></div>
+        </div>
+
+        <div class="history-box" id="history-box">你还没有做出选择。</div>
+      </aside>
+
+      <article class="story" id="story-root"></article>
+    </section>
+
+    <footer class="foot">
+      键盘支持：方向键切换选项，Enter / Space 确认选择。
+    </footer>
+  </main>
+
+  <script>
+    const STORY = {
+      opening: {
+        badge: "第一幕",
+        title: "雨夜站台",
+        text: "晚自习后，突如其来的大雨把你和林月困在同一个公交站台。\n她的书包已经湿了半边，正抱着臂膀发呆。",
+        options: [
+          {
+            text: "把伞递给她，一起走到站台里侧。",
+            effects: { warmth: 1, courage: 1 },
+            next: "umbrella_walk"
+          },
+          {
+            text: "提议去便利店躲雨，顺便聊聊天。",
+            effects: { courage: 1, sincerity: 1 },
+            next: "store_chat"
+          },
+          {
+            text: "先沉默，回家后再发消息解释。",
+            effects: { sincerity: 1, warmth: -1 },
+            next: "detour"
+          }
+        ]
+      },
+      umbrella_walk: {
+        badge: "第二幕",
+        title: "同一把伞",
+        text: "雨声很近，你们肩膀偶尔碰到。林月笑着说，你今天好像比平时更大胆。",
+        options: [
+          {
+            text: "把她送到小区门口，再目送她上楼。",
+            effects: { warmth: 1 },
+            next: "rehearsal"
+          },
+          {
+            text: "在路口挥手告别，怕自己表现得太明显。",
+            effects: { courage: 1, warmth: -1 },
+            next: "rehearsal"
+          }
+        ]
+      },
+      store_chat: {
+        badge: "第二幕",
+        title: "暖灯便利店",
+        text: "你们坐在热饮区，她说最近社团演出压力很大，怕上台失误。",
+        options: [
+          {
+            text: "认真听她说完，告诉她你会去现场支持。",
+            effects: { warmth: 1, sincerity: 1 },
+            next: "rehearsal"
+          },
+          {
+            text: "故意开点玩笑，让她先放松下来。",
+            effects: { courage: 1 },
+            next: "rehearsal"
+          }
+        ]
+      },
+      detour: {
+        badge: "第二幕",
+        title: "延迟的消息",
+        text: "你回到家才发消息：'刚才不是不想理你，是我有点紧张。'\n林月回了一个表情包，问你周末有没有空。",
+        options: [
+          {
+            text: "直接约她出来，当面把话说清楚。",
+            effects: { sincerity: 2, courage: 1 },
+            next: "message_night"
+          },
+          {
+            text: "继续在聊天框里打太极，不正面回应。",
+            effects: { sincerity: -1 },
+            next: "message_night"
+          }
+        ]
+      },
+      rehearsal: {
+        badge: "第三幕",
+        title: "彩排前夜",
+        text: "演出前一天，她发来语音：'你会来吗？我有点怕。'",
+        options: [
+          {
+            text: "回复：'我会在第一排。你抬头就能看到我。'",
+            effects: { warmth: 1, courage: 1 },
+            next: "festival"
+          },
+          {
+            text: "只发一句加油，告诉她你可能会迟到。",
+            effects: { sincerity: 1 },
+            next: "festival"
+          }
+        ]
+      },
+      message_night: {
+        badge: "第三幕",
+        title: "夜风和奶茶",
+        text: "你们在校门口的小店碰面。她低头戳着奶茶杯，说其实她也在等你主动。",
+        options: [
+          {
+            text: "承认自己一直在意她，只是怕太快。",
+            effects: { warmth: 1, sincerity: 1 },
+            next: "festival"
+          },
+          {
+            text: "把话题岔开，说先做朋友也挺好。",
+            effects: { warmth: 1 },
+            next: "festival"
+          }
+        ]
+      },
+      festival: {
+        badge: "终幕",
+        title: "演出散场",
+        text: "人群散去，只剩舞台边的暖光。林月抱着花束看着你，像在等最后一句话。",
+        options: [
+          {
+            text: "鼓起勇气，当面说出心意。",
+            effects: { courage: 2, sincerity: 1 },
+            next: "ending_check"
+          },
+          {
+            text: "把心意写在便签里，轻轻塞进她手里。",
+            effects: { warmth: 1, sincerity: 1 },
+            next: "ending_check"
+          },
+          {
+            text: "什么也不说，约她下次再见。",
+            effects: { warmth: 1 },
+            next: "ending_check"
+          }
+        ]
+      }
+    };
+
+    const ENDINGS = {
+      sweet: {
+        title: "甜蜜结局：同频心动",
+        text: "她笑着打断你：'我等这句话很久了。'\n你们并肩走出礼堂，雨停了，路灯把影子拉得很近。"
+      },
+      friend: {
+        title: "挚友结局：慢慢靠近",
+        text: "她说：'你真的很真诚，我很珍惜你。'\n你们还没立刻成为恋人，但约好了继续把彼此放在生活的前排。"
+      },
+      missed: {
+        title: "错过结局：下一次再勇敢",
+        text: "她礼貌地点头，和你并肩走了一段。\n你们都明白今晚还差一点点勇气，但故事并没有就此结束。"
+      }
+    };
+
+    const state = {
+      mode: "menu",
+      currentNode: "opening",
+      selectedOption: 0,
+      stats: { warmth: 0, courage: 0, sincerity: 0 },
+      history: [],
+      endingKey: null,
+      virtualTimeMs: 0
+    };
+
+    const storyRoot = document.getElementById("story-root");
+    const historyBox = document.getElementById("history-box");
+    const warmthBar = document.getElementById("warmth-bar");
+    const courageBar = document.getElementById("courage-bar");
+    const sincerityBar = document.getElementById("sincerity-bar");
+    const warmthLabel = document.getElementById("warmth-label");
+    const courageLabel = document.getElementById("courage-label");
+    const sincerityLabel = document.getElementById("sincerity-label");
+
+    function clamp(v, min, max) {
+      return Math.max(min, Math.min(max, v));
+    }
+
+    function addEffects(effects) {
+      for (const [k, v] of Object.entries(effects || {})) {
+        state.stats[k] = clamp((state.stats[k] || 0) + v, -2, 8);
+      }
+    }
+
+    function updateStats() {
+      warmthLabel.textContent = state.stats.warmth;
+      courageLabel.textContent = state.stats.courage;
+      sincerityLabel.textContent = state.stats.sincerity;
+
+      warmthBar.style.width = `${clamp((state.stats.warmth + 2) * 10, 0, 100)}%`;
+      courageBar.style.width = `${clamp((state.stats.courage + 2) * 10, 0, 100)}%`;
+      sincerityBar.style.width = `${clamp((state.stats.sincerity + 2) * 10, 0, 100)}%`;
+    }
+
+    function pushHistory(text) {
+      state.history.push(text);
+      state.history = state.history.slice(-4);
+      historyBox.textContent = state.history.length
+        ? state.history.join(" | ")
+        : "你还没有做出选择。";
+    }
+
+    function resolveEnding() {
+      const { warmth, courage, sincerity } = state.stats;
+      if (warmth >= 3 && courage >= 4) {
+        state.endingKey = "sweet";
+      } else if (sincerity >= 4 && warmth >= 2) {
+        state.endingKey = "friend";
+      } else {
+        state.endingKey = "missed";
+      }
+      state.mode = "ended";
+    }
+
+    function choose(index) {
+      if (state.mode !== "playing") return;
+      const node = STORY[state.currentNode];
+      const option = node.options[index];
+      if (!option) return;
+
+      addEffects(option.effects);
+      pushHistory(option.text);
+
+      if (option.next === "ending_check") {
+        resolveEnding();
+      } else {
+        state.currentNode = option.next;
+        state.selectedOption = 0;
+      }
+      render();
+    }
+
+    function startGame() {
+      state.mode = "playing";
+      state.currentNode = "opening";
+      state.selectedOption = 0;
+      state.endingKey = null;
+      state.stats = { warmth: 0, courage: 0, sincerity: 0 };
+      state.history = [];
+      render();
+    }
+
+    function renderMenu() {
+      storyRoot.innerHTML = `
+        <span class="badge">开场</span>
+        <h2 class="scene-title">你会怎么开始这段关系？</h2>
+        <p class="scene-text">这是一个暧昧恋爱向的文字冒险。\n通过选择推进剧情，最终会进入「甜蜜 / 挚友 / 错过」三种结局之一。</p>
+        <button id="start-btn" class="action-btn" type="button">开始故事</button>
+      `;
+
+      document.getElementById("start-btn").addEventListener("click", startGame);
+    }
+
+    function renderStory() {
+      const node = STORY[state.currentNode];
+      const optionsHtml = node.options.map((opt, i) => {
+        const selected = i === state.selectedOption ? "selected" : "";
+        return `<button class="choice-btn ${selected}" data-choice="${i}" type="button">${opt.text}</button>`;
+      }).join("");
+
+      storyRoot.innerHTML = `
+        <span class="badge">${node.badge}</span>
+        <h2 class="scene-title">${node.title}</h2>
+        <p class="scene-text">${node.text}</p>
+        <div class="choices">${optionsHtml}</div>
+      `;
+
+      for (const btn of storyRoot.querySelectorAll("[data-choice]")) {
+        btn.addEventListener("click", (event) => {
+          const idx = Number(event.currentTarget.getAttribute("data-choice"));
+          choose(idx);
+        });
+      }
+    }
+
+    function renderEnding() {
+      const ending = ENDINGS[state.endingKey];
+      storyRoot.innerHTML = `
+        <span class="badge">结局</span>
+        <div class="ending-card">
+          <h2 class="ending-title">${ending.title}</h2>
+          <p class="scene-text">${ending.text}</p>
+        </div>
+        <button id="restart-btn" class="action-btn" type="button">再玩一次</button>
+      `;
+      document.getElementById("restart-btn").addEventListener("click", startGame);
+    }
+
+    function render() {
+      updateStats();
+      if (state.mode === "menu") {
+        renderMenu();
+      } else if (state.mode === "playing") {
+        renderStory();
+      } else {
+        renderEnding();
+      }
+    }
+
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "F5") return;
+      if (state.mode === "menu") {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          startGame();
+        }
+        return;
+      }
+
+      if (state.mode === "ended") {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          startGame();
+        }
+        return;
+      }
+
+      const node = STORY[state.currentNode];
+      if (!node || !node.options.length) return;
+
+      if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+        event.preventDefault();
+        state.selectedOption = (state.selectedOption - 1 + node.options.length) % node.options.length;
+        render();
+      } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+        event.preventDefault();
+        state.selectedOption = (state.selectedOption + 1) % node.options.length;
+        render();
+      } else if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        choose(state.selectedOption);
+      }
+    });
+
+    window.render_game_to_text = () => {
+      const payload = {
+        mode: state.mode,
+        coordinateSystem: "N/A (text adventure, no 2D coordinates)",
+        currentNode: state.currentNode,
+        selectedOption: state.selectedOption,
+        options: state.mode === "playing" ? STORY[state.currentNode].options.map((o) => o.text) : [],
+        stats: state.stats,
+        ending: state.endingKey,
+        history: state.history.slice(-3),
+        virtualTimeMs: state.virtualTimeMs
+      };
+      return JSON.stringify(payload, null, 2);
+    };
+
+    window.advanceTime = (ms) => {
+      const step = Number(ms);
+      state.virtualTimeMs += Number.isFinite(step) ? Math.max(0, step) : 0;
+      return Promise.resolve();
+    };
+
+    render();
+  </script>
+</body>
+</html>
