@@ -12,6 +12,7 @@ const fastBtn = document.getElementById("fast-btn");
 const skipBtn = document.getElementById("skip-btn");
 const bgmToggle = document.getElementById("bgm-toggle");
 const sfxToggle = document.getElementById("sfx-toggle");
+const appVersion = document.querySelector('meta[name="app-version"]')?.content ?? "dev";
 
 let engine = null;
 let snapshot = null;
@@ -123,7 +124,9 @@ function toAssetUrl(path) {
     return null;
   }
   try {
-    return new URL(path, import.meta.url).href;
+    const url = new URL(path, import.meta.url);
+    url.searchParams.set("v", appVersion);
+    return url.href;
   } catch {
     return path;
   }
@@ -158,6 +161,7 @@ function parseSeedFromQuery() {
 
 async function loadStory() {
   const url = new URL("./story.json", import.meta.url);
+  url.searchParams.set("v", appVersion);
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`加载 story.json 失败: ${response.status}`);
