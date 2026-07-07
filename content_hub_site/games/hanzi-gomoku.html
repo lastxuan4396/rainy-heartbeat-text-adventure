@@ -375,6 +375,7 @@
       </section>
     </main>
 
+    <script src="../assets/hanzi-extra-words.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
     <script>
       const canvas = document.getElementById("game");
@@ -436,9 +437,12 @@
         ["归心似箭", 108], ["日新月异", 104], ["清风明月", 104], ["春和景明", 104], ["长风破浪", 108], ["山高水长", 104],
         ["海阔天空", 104], ["花好月圆", 104], ["柳暗花明", 104], ["风声鹤唳", 108]
       ];
+      const extraBank = (Array.isArray(window.HANZI_EXTRA_WORDS) ? window.HANZI_EXTRA_WORDS : [])
+        .filter((word) => /^[\u4e00-\u9fff]{2,4}$/.test(word))
+        .map((word) => [word, word.length === 2 ? 26 : word.length === 3 ? 54 : 92]);
       const wordPool = (() => {
         const seen = new Map();
-        for (const [word, score] of [...dictionaryBank, ...commonBank, ...poeticBank, ...idiomBank]) {
+        for (const [word, score] of [...extraBank, ...dictionaryBank, ...commonBank, ...poeticBank, ...idiomBank]) {
           seen.set(word, Math.max(score, seen.get(word) || 0));
         }
         return [...seen.entries()];
@@ -1213,6 +1217,18 @@
           placePiece(7, 7);
           state.turn = 1;
           state.hands[1][state.selected[1]] = "风";
+          placePiece(8, 7);
+          return window.render_game_to_text();
+        },
+        forcePair(left, right) {
+          resetGame(true);
+          state.turn = 0;
+          state.selected[0] = 0;
+          state.hands[0][0] = left;
+          placePiece(7, 7);
+          state.turn = 1;
+          state.selected[1] = 0;
+          state.hands[1][0] = right;
           placePiece(8, 7);
           return window.render_game_to_text();
         },
