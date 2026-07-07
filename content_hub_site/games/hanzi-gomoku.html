@@ -163,6 +163,29 @@
         gap: 8px;
       }
 
+      .online-panel {
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(13, 125, 120, 0.18);
+        background: rgba(13, 125, 120, 0.07);
+      }
+
+      .online-status {
+        min-height: 22px;
+        color: #075f5b;
+        font-size: 0.88rem;
+        font-weight: 800;
+        line-height: 1.45;
+      }
+
+      .online-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
       .btn {
         min-height: 42px;
         border: 1px solid rgba(33, 26, 22, 0.18);
@@ -321,10 +344,19 @@
             <div class="row"><span>已成词</span><strong id="word-count">0 个</strong></div>
           </section>
 
+          <section class="online-panel">
+            <p class="status-label">联机房间</p>
+            <div id="online-status" class="online-status">本机双人；开房间后复制邀请给朋友。</div>
+            <div class="online-actions">
+              <button id="create-room" class="btn" type="button">开房间</button>
+              <button id="copy-room" class="btn" type="button">复制邀请</button>
+            </div>
+          </section>
+
           <div class="controls">
             <button id="restart" class="btn primary" type="button">重开</button>
             <button id="shuffle" class="btn" type="button">换字</button>
-            <button id="share" class="btn" type="button">复制链接</button>
+            <button id="share" class="btn" type="button">复制战局</button>
             <button id="fullscreen" class="btn" type="button">全屏</button>
           </div>
 
@@ -337,12 +369,13 @@
             <li>红方、青方轮流落字，横竖斜连成词就得分。</li>
             <li>一手同时组成多个词，会把分数全部加上。</li>
             <li>有效词每局都算；每局会随机先手、随机发牌，并给一组主题词小加成。</li>
-            <li>复制链接发给对方，对方打开就是当前战局。</li>
+            <li>开房间复制邀请给朋友，双方打开同一网址即可实时对战。</li>
           </ul>
         </aside>
       </section>
     </main>
 
+    <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
     <script>
       const canvas = document.getElementById("game");
       const ctx = canvas.getContext("2d");
@@ -354,6 +387,9 @@
       const tealScoreEl = document.getElementById("teal-score");
       const wordCountEl = document.getElementById("word-count");
       const logEl = document.getElementById("log");
+      const onlineStatusEl = document.getElementById("online-status");
+      const createRoomBtn = document.getElementById("create-room");
+      const copyRoomBtn = document.getElementById("copy-room");
       const restartBtn = document.getElementById("restart");
       const shuffleBtn = document.getElementById("shuffle");
       const shareBtn = document.getElementById("share");
@@ -427,6 +463,200 @@
         log: [],
         tick: 0
       };
+
+      const online = {
+        enabled: false,
+        role: "",
+        roomId: "",
+        player: null,
+        peer: null,
+        conn: null,
+        connected: false,
+        suppressSync: false
+      };
+
+      function roomFromUrl() {
+        return new URLSearchParams(location.search).get("room") || "";
+      }
+
+      function makeRoomId() {
+        return `hanzi-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+      }
+
+      function roomInviteUrl() {
+        const url = new URL(location.href);
+        url.search = "";
+        url.hash = "";
+        if (online.roomId) url.searchParams.set("room", online.roomId);
+        return url.toString();
+      }
+
+      function setRoomInUrl(roomId) {
+        const url = new URL(location.href);
+        url.hash = "";
+        url.searchParams.set("room", roomId);
+        history.replaceState(null, "", `${url.pathname}${url.search}`);
+      }
+
+      function setOnlineStatus(text) {
+        onlineStatusEl.textContent = text;
+      }
+
+      function hasPeerSupport() {
+        return typeof window.Peer === "function";
+      }
+
+      function canControlTurn() {
+        if (!online.enabled) return true;
+        if (!online.connected) return online.role === "host";
+        return online.player === state.turn;
+      }
+
+      function playerName(index) {
+        return index === 1 ? players[1].name : players[0].name;
+      }
+
+      function refreshOnlineStatus() {
+        if (!online.enabled) {
+          setOnlineStatus("本机双人；开房间后复制邀请给朋友。");
+          return;
+        }
+        if (!online.connected) {
+          if (online.role === "host") {
+            setOnlineStatus(`房间 ${online.roomId} 已开；复制邀请给朋友，等对方加入。`);
+          } else {
+            setOnlineStatus(`正在加入房间 ${online.roomId}...`);
+          }
+          return;
+        }
+        const mine = playerName(online.player);
+        const turn = playerName(state.turn);
+        setOnlineStatus(`${mine}在线；${online.player === state.turn ? "轮到你落字。" : `等待${turn}落字。`}`);
+      }
+
+      function sendWelcome() {
+        if (!online.conn || !online.conn.open) return;
+        online.conn.send({
+          type: "welcome",
+          player: 1,
+          state: serializeState()
+        });
+      }
+
+      function broadcastState(reason) {
+        if (!online.enabled || online.suppressSync || !online.conn || !online.conn.open) return;
+        online.conn.send({
+          type: "state",
+          reason,
+          state: serializeState()
+        });
+        refreshOnlineStatus();
+      }
+
+      function handlePeerMessage(message) {
+        if (!message || typeof message !== "object") return;
+        if (message.type === "hello" && online.role === "host") {
+          sendWelcome();
+          return;
+        }
+        if (message.type === "welcome" && online.role === "guest") {
+          online.player = message.player === 0 ? 0 : 1;
+          online.suppressSync = true;
+          if (message.state) applySerializedState(message.state);
+          online.suppressSync = false;
+          refreshOnlineStatus();
+          return;
+        }
+        if (message.type === "state" && message.state) {
+          online.suppressSync = true;
+          applySerializedState(message.state);
+          online.suppressSync = false;
+          refreshOnlineStatus();
+        }
+      }
+
+      function setupConnection(conn) {
+        if (online.conn && online.conn !== conn) {
+          online.conn.close();
+        }
+        online.conn = conn;
+        conn.on("open", () => {
+          online.connected = true;
+          if (online.role === "host") {
+            sendWelcome();
+          } else {
+            conn.send({ type: "hello" });
+          }
+          refreshOnlineStatus();
+        });
+        conn.on("data", handlePeerMessage);
+        conn.on("close", () => {
+          online.connected = false;
+          refreshOnlineStatus();
+        });
+        conn.on("error", () => {
+          online.connected = false;
+          setOnlineStatus("联机连接出错，可以刷新后重新开房间。");
+        });
+      }
+
+      function createPeer(id, onOpen) {
+        const options = {
+          host: "0.peerjs.com",
+          port: 443,
+          path: "/",
+          secure: true,
+          debug: 0
+        };
+        const peer = id ? new Peer(id, options) : new Peer(options);
+        peer.on("open", onOpen);
+        peer.on("connection", (conn) => {
+          setupConnection(conn);
+        });
+        peer.on("error", (error) => {
+          online.enabled = false;
+          setOnlineStatus(`联机失败：${error.type || "连接错误"}。可刷新后重试。`);
+        });
+        return peer;
+      }
+
+      function createRoom() {
+        if (!hasPeerSupport()) {
+          setOnlineStatus("联机组件没加载成功，先刷新页面再试。");
+          return;
+        }
+        const roomId = makeRoomId();
+        online.enabled = true;
+        online.role = "host";
+        online.roomId = roomId;
+        online.player = 0;
+        online.connected = false;
+        online.peer?.destroy();
+        online.peer = createPeer(roomId, () => {
+          setRoomInUrl(roomId);
+          refreshOnlineStatus();
+        });
+        refreshOnlineStatus();
+      }
+
+      function joinRoom(roomId) {
+        if (!roomId) return;
+        if (!hasPeerSupport()) {
+          setOnlineStatus("联机组件没加载成功，先刷新页面再试。");
+          return;
+        }
+        online.enabled = true;
+        online.role = "guest";
+        online.roomId = roomId;
+        online.player = 1;
+        online.connected = false;
+        online.peer?.destroy();
+        online.peer = createPeer(undefined, () => {
+          setRoomInUrl(roomId);
+          setupConnection(online.peer.connect(roomId, { reliable: true }));
+        });
+        refreshOnlineStatus();
+      }
 
       function makeBoard() {
         return Array.from({ length: size }, () => Array.from({ length: size }, () => null));
@@ -503,7 +733,7 @@
         }
       }
 
-      function resetGame(skipHash = false, seed = makeSeed()) {
+      function resetGame(skipHash = false, seed = makeSeed(), shouldBroadcast = false) {
         state.board = makeBoard();
         state.hands = [[], []];
         state.selected = [0, 0];
@@ -525,6 +755,7 @@
         if (!skipHash) updateShareHash();
         syncUi();
         render();
+        if (shouldBroadcast) broadcastState("reset");
       }
 
       function boardToCanvas(x, y) {
@@ -598,6 +829,10 @@
       }
 
       function placePiece(x, y) {
+        if (!canControlTurn()) {
+          phraseEl.textContent = `等${players[state.turn].name}落字。`;
+          return false;
+        }
         if (!inBounds(x, y) || state.board[y][x]) return false;
         const player = state.turn;
         const char = state.hands[player][state.selected[player]];
@@ -630,10 +865,15 @@
         updateShareHash();
         syncUi();
         render();
+        broadcastState("move");
         return true;
       }
 
       function shuffleHand() {
+        if (!canControlTurn()) {
+          phraseEl.textContent = `等${players[state.turn].name}操作。`;
+          return;
+        }
         const player = state.turn;
         if (!state.hands[player].length) return;
         const replaced = state.hands[player].splice(state.selected[player], 1, nextChar())[0];
@@ -645,6 +885,7 @@
         updateShareHash();
         syncUi();
         render();
+        broadcastState("shuffle");
       }
 
       function syncUi() {
@@ -658,6 +899,7 @@
           btn.className = `tile player-${player}${index === state.selected[player] ? " active" : ""}`;
           btn.type = "button";
           btn.textContent = char;
+          btn.disabled = !canControlTurn();
           btn.setAttribute("aria-label", `选择汉字${char}`);
           btn.addEventListener("click", () => {
             state.selected[player] = index;
@@ -675,6 +917,7 @@
           li.textContent = item;
           logEl.append(li);
         });
+        refreshOnlineStatus();
       }
 
       function drawBackground() {
@@ -790,14 +1033,45 @@
           m: state.moveCount,
           b: state.bagIndex,
           f: [...state.foundWords],
-          l: state.log
+          l: state.log,
+          w: state.lastWords.map((item) => ({ word: item.word, score: item.score, cells: item.cells })),
+          q: phraseEl.textContent
         };
       }
 
       function updateShareHash() {
+        if (online.enabled) return;
         const json = JSON.stringify(serializeState());
         const encoded = btoa(unescape(encodeURIComponent(json)));
-        history.replaceState(null, "", `${location.pathname}#s=${encoded}`);
+        history.replaceState(null, "", `${location.pathname}${location.search}#s=${encoded}`);
+      }
+
+      function applySerializedState(data) {
+        resetSeed(typeof data.g === "string" ? data.g : "legacy");
+        state.board = makeBoard();
+        for (const [x, y, char, owner] of data.p || []) {
+          if (inBounds(x, y)) state.board[y][x] = { char, owner: owner === 1 ? 1 : 0 };
+        }
+        state.hands = Array.isArray(data.h) ? data.h : [[], []];
+        state.selected = Array.isArray(data.s) ? data.s : [0, 0];
+        state.cursor = Array.isArray(data.c) ? { x: data.c[0], y: data.c[1] } : { x: 7, y: 7 };
+        state.scores = Array.isArray(data.sc) ? data.sc : [0, 0];
+        state.turn = data.t === 1 ? 1 : 0;
+        state.moveCount = Number(data.m) || 0;
+        state.bagIndex = Number(data.b) || 0;
+        state.foundWords = new Set(Array.isArray(data.f) ? data.f : []);
+        state.lastWords = Array.isArray(data.w) ? data.w.map((item) => ({
+          word: item.word,
+          score: Number(item.score) || 0,
+          cells: Array.isArray(item.cells) ? item.cells : []
+        })) : [];
+        state.lastCells = state.lastWords.flatMap((item) => item.cells);
+        state.log = Array.isArray(data.l) ? data.l.slice(0, 8) : [];
+        refillHand(0);
+        refillHand(1);
+        phraseEl.textContent = typeof data.q === "string" && data.q ? data.q : "战局已同步。";
+        syncUi();
+        render();
       }
 
       function loadFromHash() {
@@ -805,26 +1079,7 @@
         try {
           const raw = decodeURIComponent(escape(atob(location.hash.slice(3))));
           const data = JSON.parse(raw);
-          resetSeed(typeof data.g === "string" ? data.g : "legacy");
-          state.board = makeBoard();
-          for (const [x, y, char, owner] of data.p || []) {
-            if (inBounds(x, y)) state.board[y][x] = { char, owner: owner === 1 ? 1 : 0 };
-          }
-          state.hands = Array.isArray(data.h) ? data.h : [[], []];
-          state.selected = Array.isArray(data.s) ? data.s : [0, 0];
-          state.cursor = Array.isArray(data.c) ? { x: data.c[0], y: data.c[1] } : { x: 7, y: 7 };
-          state.scores = Array.isArray(data.sc) ? data.sc : [0, 0];
-          state.turn = data.t === 1 ? 1 : 0;
-          state.moveCount = Number(data.m) || 0;
-          state.bagIndex = Number(data.b) || 0;
-          state.foundWords = new Set(Array.isArray(data.f) ? data.f : []);
-          state.lastWords = [];
-          state.lastCells = [];
-          state.log = Array.isArray(data.l) ? data.l.slice(0, 8) : [];
-          refillHand(0);
-          refillHand(1);
-          syncUi();
-          render();
+          applySerializedState(data);
           return true;
         } catch {
           return false;
@@ -832,12 +1087,32 @@
       }
 
       async function copyShareLink() {
+        if (online.enabled && online.roomId) {
+          await copyRoomLink();
+          return;
+        }
         updateShareHash();
         try {
           await navigator.clipboard.writeText(location.href);
           phraseEl.textContent = "战局链接已复制，发给对方就能接着下。";
         } catch {
           phraseEl.textContent = "复制失败，可以手动复制地址栏链接。";
+        }
+      }
+
+      async function copyRoomLink() {
+        if (!online.roomId) {
+          createRoom();
+        }
+        if (!online.roomId) {
+          phraseEl.textContent = "房间还没开成功，刷新页面后再试。";
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(roomInviteUrl());
+          phraseEl.textContent = "邀请链接已复制，发给朋友就能实时对战。";
+        } catch {
+          phraseEl.textContent = `复制失败，可以手动复制：${roomInviteUrl()}`;
         }
       }
 
@@ -871,7 +1146,7 @@
           event.preventDefault();
           placePiece(state.cursor.x, state.cursor.y);
         } else if (event.key.toLowerCase() === "r") {
-          resetGame();
+          resetGame(false, makeSeed(), true);
         } else if (event.key.toLowerCase() === "x") {
           shuffleHand();
         } else if (event.key.toLowerCase() === "f") {
@@ -887,7 +1162,9 @@
         }
       }
 
-      restartBtn.addEventListener("click", () => resetGame());
+      createRoomBtn.addEventListener("click", createRoom);
+      copyRoomBtn.addEventListener("click", copyRoomLink);
+      restartBtn.addEventListener("click", () => resetGame(false, makeSeed(), true));
       shuffleBtn.addEventListener("click", shuffleHand);
       shareBtn.addEventListener("click", copyShareLink);
       fullscreenBtn.addEventListener("click", toggleFullscreen);
@@ -907,7 +1184,14 @@
         }
         return JSON.stringify({
           coordinateSystem: "15x15 grid, origin top-left, x right, y down",
-          mode: "two-player-share-link-word-score",
+          mode: online.enabled ? "two-player-online-room-word-score" : "two-player-share-link-word-score",
+          online: {
+            enabled: online.enabled,
+            role: online.role,
+            roomId: online.roomId,
+            player: online.player === null ? null : playerName(online.player),
+            connected: online.connected
+          },
           turn: players[state.turn].name,
           scores: { red: state.scores[0], teal: state.scores[1] },
           cursor: state.cursor,
@@ -940,6 +1224,10 @@
 
       if (!loadFromHash()) {
         resetGame();
+      }
+      const initialRoom = roomFromUrl();
+      if (initialRoom) {
+        joinRoom(initialRoom);
       }
     </script>
   </body>
