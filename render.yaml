@@ -10,6 +10,6 @@ services:
     name: hanzi-word-duel
     runtime: static
     branch: main
-    buildCommand: echo "No build step required"
-    rootDir: content_hub_site
-    staticPublishPath: .
+    buildCommand: rm -rf render-dist && cp -R content_hub_site render-dist
+    rootDir: .
+    staticPublishPath: ./render-dist
