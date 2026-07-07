@@ -4,10 +4,12 @@ services:
     runtime: static
     branch: main
     buildCommand: echo "No build step required"
-    staticPublishPath: ./text_adventure_love
+    rootDir: text_adventure_love
+    staticPublishPath: .
   - type: web
     name: hanzi-word-duel
     runtime: static
     branch: main
     buildCommand: echo "No build step required"
-    staticPublishPath: ./content_hub_site
+    rootDir: content_hub_site
+    staticPublishPath: .
