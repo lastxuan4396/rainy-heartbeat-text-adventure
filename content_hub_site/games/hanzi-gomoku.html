@@ -1,0 +1,946 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="字阵对词：两人在浏览器里轮流落汉字组词，复制链接即可分享战局。" />
+    <title>字阵对词 | 双人汉字组词棋盘</title>
+    <style>
+      :root {
+        --ink: #211a16;
+        --muted: #6f6358;
+        --paper: #f5ecdc;
+        --red: #b93524;
+        --teal: #0d7d78;
+        --gold: #d39b25;
+        --shadow: 0 18px 45px rgba(39, 29, 18, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        color: var(--ink);
+        background:
+          linear-gradient(135deg, rgba(179, 53, 36, 0.09), rgba(13, 125, 120, 0.1)),
+          radial-gradient(circle at 18% 16%, rgba(211, 155, 37, 0.2), transparent 34%),
+          var(--paper);
+        font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", sans-serif;
+        overflow-x: hidden;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .page {
+        width: min(1180px, 100% - 32px);
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 18px 0 22px;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 14px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .back {
+        color: var(--teal);
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .title {
+        margin: 0;
+        font-size: clamp(1.45rem, 3vw, 2.6rem);
+        letter-spacing: 0;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 16px;
+        align-items: stretch;
+      }
+
+      .board-panel,
+      .side-panel {
+        border: 1px solid rgba(77, 54, 30, 0.2);
+        border-radius: 8px;
+        background: rgba(255, 248, 236, 0.86);
+        box-shadow: var(--shadow);
+      }
+
+      .board-panel {
+        position: relative;
+        min-height: 620px;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+      }
+
+      canvas {
+        width: min(100%, 680px);
+        aspect-ratio: 1;
+        display: block;
+        border-radius: 8px;
+        touch-action: none;
+        box-shadow: inset 0 0 0 1px rgba(58, 37, 17, 0.18);
+      }
+
+      .side-panel {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .status {
+        padding: 12px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.56);
+        border: 1px solid rgba(77, 54, 30, 0.13);
+      }
+
+      .status-label {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .status-main {
+        margin: 4px 0 0;
+        font-size: 1.2rem;
+        line-height: 1.35;
+        font-weight: 900;
+      }
+
+      .hand {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 7px;
+      }
+
+      .tile {
+        height: 50px;
+        border: 1px solid rgba(77, 54, 30, 0.26);
+        border-radius: 8px;
+        background: #fffaf1;
+        color: var(--red);
+        font-size: 1.34rem;
+        font-weight: 900;
+        cursor: pointer;
+        transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+      }
+
+      .tile.player-1 {
+        color: var(--teal);
+      }
+
+      .tile:hover,
+      .tile.active {
+        transform: translateY(-2px);
+        border-color: currentColor;
+        background: #fff1dc;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .btn {
+        min-height: 42px;
+        border: 1px solid rgba(33, 26, 22, 0.18);
+        border-radius: 8px;
+        background: #fffaf1;
+        color: var(--ink);
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .btn.primary {
+        background: var(--red);
+        color: white;
+        border-color: var(--red);
+      }
+
+      .meter {
+        display: grid;
+        gap: 8px;
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 0.94rem;
+      }
+
+      .red-score {
+        color: var(--red);
+      }
+
+      .teal-score {
+        color: var(--teal);
+      }
+
+      .phrase {
+        min-height: 52px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: rgba(13, 125, 120, 0.1);
+        color: #075f5b;
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+
+      .log {
+        min-height: 84px;
+        max-height: 142px;
+        overflow: auto;
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .rules {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .rules li + li {
+        margin-top: 4px;
+      }
+
+      .kbd {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 5px;
+        border: 1px solid rgba(33, 26, 22, 0.22);
+        background: rgba(255, 255, 255, 0.75);
+        color: var(--ink);
+        font-size: 0.8rem;
+        font-weight: 800;
+      }
+
+      @media (max-width: 980px) {
+        .shell {
+          grid-template-columns: 1fr;
+        }
+
+        .board-panel {
+          min-height: auto;
+        }
+
+        .side-panel {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 640px) {
+        .page {
+          width: min(100% - 18px, 1180px);
+          padding-top: 10px;
+        }
+
+        .topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .board-panel,
+        .side-panel {
+          padding: 10px;
+        }
+
+        .side-panel {
+          grid-template-columns: 1fr;
+        }
+
+        .tile {
+          height: 46px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <a class="back" href="../index.html#games">返回游戏列表</a>
+        <h1 class="title">字阵对词</h1>
+      </header>
+
+      <section class="shell" aria-label="双人汉字棋盘组词游戏">
+        <div class="board-panel">
+          <canvas id="game" width="720" height="720" aria-label="15乘15双人汉字组词棋盘"></canvas>
+        </div>
+
+        <aside class="side-panel">
+          <div class="status">
+            <p class="status-label">当前回合</p>
+            <p id="status-main" class="status-main">红方落字</p>
+          </div>
+
+          <section>
+            <p id="hand-label" class="status-label">红方手牌</p>
+            <div id="hand" class="hand" aria-label="可选择的汉字"></div>
+          </section>
+
+          <section>
+            <p class="status-label">本手成词</p>
+            <div id="phrase" class="phrase">轮流落字，借对方的字也能组词得分。</div>
+          </section>
+
+          <section class="meter">
+            <div class="row"><span>红方</span><strong id="red-score" class="red-score">0 分</strong></div>
+            <div class="row"><span>青方</span><strong id="teal-score" class="teal-score">0 分</strong></div>
+            <div class="row"><span>已成词</span><strong id="word-count">0 个</strong></div>
+          </section>
+
+          <div class="controls">
+            <button id="restart" class="btn primary" type="button">重开</button>
+            <button id="shuffle" class="btn" type="button">换字</button>
+            <button id="share" class="btn" type="button">复制链接</button>
+            <button id="fullscreen" class="btn" type="button">全屏</button>
+          </div>
+
+          <section>
+            <p class="status-label">最近成词</p>
+            <ol id="log" class="log"></ol>
+          </section>
+
+          <ul class="rules">
+            <li>红方、青方轮流落字，横竖斜连成词就得分。</li>
+            <li>一手同时组成多个词，会把分数全部加上。</li>
+            <li>有效词每局都算；每局会随机先手、随机发牌，并给一组主题词小加成。</li>
+            <li>复制链接发给对方，对方打开就是当前战局。</li>
+          </ul>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const handEl = document.getElementById("hand");
+      const handLabelEl = document.getElementById("hand-label");
+      const statusEl = document.getElementById("status-main");
+      const phraseEl = document.getElementById("phrase");
+      const redScoreEl = document.getElementById("red-score");
+      const tealScoreEl = document.getElementById("teal-score");
+      const wordCountEl = document.getElementById("word-count");
+      const logEl = document.getElementById("log");
+      const restartBtn = document.getElementById("restart");
+      const shuffleBtn = document.getElementById("shuffle");
+      const shareBtn = document.getElementById("share");
+      const fullscreenBtn = document.getElementById("fullscreen");
+
+      const size = 15;
+      const handSize = 7;
+      const players = [
+        { name: "红方", color: "#b93524" },
+        { name: "青方", color: "#0d7d78" }
+      ];
+      const dirs = [
+        [1, 0],
+        [0, 1],
+        [1, 1],
+        [1, -1]
+      ];
+      const bag = "春风明月山河人间清欢星火长安归舟新雨故园知音梦想花开少年远方诗意江湖云海秋水天涯心事光阴晚风清晨暖阳落日灯火故事相逢离别回声自由旅人海潮阴云雨天年回声别意日暖开舟";
+      const dictionaryBank = [
+        ["阴风", 26], ["阴云", 24], ["阴雨", 24], ["阴天", 22], ["光阴", 26], ["太阴", 24], ["山阴", 24], ["背阴", 24],
+        ["归心", 26], ["归人", 24], ["归舟", 28], ["归来", 24], ["归去", 24], ["回声", 24], ["回天", 24], ["日新", 24],
+        ["新年", 24], ["暖意", 24], ["暖风", 24], ["风声", 24], ["风雨", 24], ["风云", 24], ["清风", 26], ["长风", 28],
+        ["江河", 26], ["长河", 28], ["河山", 24], ["星河", 28], ["月光", 24], ["故人", 24], ["知音", 30], ["离别", 24]
+      ];
+      const commonBank = [
+        ["开心", 22], ["心意", 22], ["心声", 22], ["心事", 24], ["人心", 22], ["人间", 24], ["故事", 24], ["梦想", 24],
+        ["花开", 24], ["少年", 24], ["远方", 24], ["自由", 26], ["相逢", 26], ["清晨", 24], ["落日", 24], ["灯火", 24],
+        ["暖阳", 24], ["海潮", 24], ["旅人", 24], ["别离", 24], ["旧梦", 24], ["一梦", 24], ["入梦", 24], ["风里", 24]
+      ];
+      const poeticBank = [
+        ["春风", 24], ["明月", 24], ["山河", 24], ["河山", 24], ["长河", 28], ["人间", 24], ["清欢", 28], ["星火", 28], ["星河", 28], ["长安", 28], ["归舟", 28],
+        ["新雨", 24], ["故园", 24], ["知音", 30], ["梦想", 24], ["花开", 24], ["少年", 24], ["远方", 24], ["诗意", 24],
+        ["江湖", 24], ["云海", 24], ["秋水", 26], ["天涯", 26], ["心事", 24], ["光阴", 26], ["晚风", 24], ["清晨", 24],
+        ["暖阳", 24], ["落日", 24], ["灯火", 24], ["故事", 24], ["相逢", 26], ["离别", 24], ["回声", 24], ["自由", 26],
+        ["旅人", 24], ["海潮", 24], ["入梦", 24], ["风里", 24], ["月光", 24], ["故人", 24], ["旧梦", 24], ["一梦", 24], ["归心", 26],
+        ["长风", 28], ["清风", 26], ["阴风", 26], ["春山", 26], ["春水", 26], ["春雨", 26], ["春日", 26], ["春梦", 26], ["风月", 26],
+        ["河清", 30], ["河灯", 28], ["江河", 26], ["海河", 24], ["归人", 24], ["舟山", 24], ["远山", 24], ["云舟", 24],
+        ["春风里", 52], ["明月光", 52], ["山河远", 56], ["人间味", 56], ["星火起", 58], ["少年游", 56],
+        ["旧时光", 58], ["一场梦", 58], ["长安夜", 58], ["归舟晚", 58], ["清欢渡", 62]
+      ];
+      const idiomBank = [
+        ["长河落日", 112], ["春风入梦", 96], ["山河明月", 96], ["人间清欢", 104], ["星火长安", 104], ["新雨故园", 96],
+        ["星河长明", 112], ["知音难得", 110], ["少年远方", 96], ["灯火阑珊", 110], ["阴风怒号", 108], ["阴风阵阵", 96],
+        ["归心似箭", 108], ["日新月异", 104], ["清风明月", 104], ["春和景明", 104], ["长风破浪", 108], ["山高水长", 104],
+        ["海阔天空", 104], ["花好月圆", 104], ["柳暗花明", 104], ["风声鹤唳", 108]
+      ];
+      const wordPool = (() => {
+        const seen = new Map();
+        for (const [word, score] of [...dictionaryBank, ...commonBank, ...poeticBank, ...idiomBank]) {
+          seen.set(word, Math.max(score, seen.get(word) || 0));
+        }
+        return [...seen.entries()];
+      })();
+      let wordScores = new Map();
+
+      const state = {
+        board: [],
+        hands: [[], []],
+        selected: [0, 0],
+        cursor: { x: 7, y: 7 },
+        scores: [0, 0],
+        turn: 0,
+        moveCount: 0,
+        seed: "",
+        themeWords: new Set(),
+        charBag: [],
+        bagIndex: 0,
+        foundWords: new Set(),
+        lastWords: [],
+        lastCells: [],
+        log: [],
+        tick: 0
+      };
+
+      function makeBoard() {
+        return Array.from({ length: size }, () => Array.from({ length: size }, () => null));
+      }
+
+      function makeSeed() {
+        return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      }
+
+      function hashString(text) {
+        let h = 2166136261;
+        for (let i = 0; i < text.length; i += 1) {
+          h ^= text.charCodeAt(i);
+          h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+      }
+
+      function makeRng(seed) {
+        let t = hashString(seed) || 1;
+        return () => {
+          t += 0x6d2b79f5;
+          let r = Math.imul(t ^ (t >>> 15), 1 | t);
+          r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+          return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+
+      function shuffled(items, rng) {
+        const copy = [...items];
+        for (let i = copy.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(rng() * (i + 1));
+          [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+      }
+
+      function scoreForWord(word, rawScore) {
+        if (word.length === 2) return Math.min(24, Math.max(18, Math.round(rawScore * 0.82)));
+        if (word.length === 3) return Math.min(42, Math.max(34, Math.round(rawScore * 0.68)));
+        return Math.min(68, Math.max(54, Math.round(rawScore * 0.6)));
+      }
+
+      function buildWordScores(seed) {
+        const rng = makeRng(`${seed}:words`);
+        state.themeWords = new Set(shuffled(wordPool.map(([word]) => word), rng).slice(0, 12));
+        wordScores = new Map(
+          wordPool.map(([word, score]) => [
+            word,
+            scoreForWord(word, score) + (state.themeWords.has(word) ? 3 : 0)
+          ])
+        );
+      }
+
+      function resetSeed(seed = makeSeed()) {
+        state.seed = seed;
+        state.charBag = shuffled(bag.split(""), makeRng(`${seed}:chars`));
+        wordScores = new Map();
+        buildWordScores(seed);
+      }
+
+      function nextChar() {
+        if (!state.charBag.length) {
+          resetSeed(state.seed || makeSeed());
+        }
+        const char = state.charBag[state.bagIndex % state.charBag.length];
+        state.bagIndex += 1;
+        return char;
+      }
+
+      function refillHand(player) {
+        while (state.hands[player].length < handSize) {
+          state.hands[player].push(nextChar());
+        }
+      }
+
+      function resetGame(skipHash = false, seed = makeSeed()) {
+        state.board = makeBoard();
+        state.hands = [[], []];
+        state.selected = [0, 0];
+        state.cursor = { x: 7, y: 7 };
+        state.scores = [0, 0];
+        resetSeed(seed);
+        state.turn = makeRng(`${seed}:starter`)() < 0.5 ? 0 : 1;
+        state.moveCount = 0;
+        state.bagIndex = 0;
+        state.foundWords = new Set();
+        state.lastWords = [];
+        state.lastCells = [];
+        state.log = [];
+        state.tick = 0;
+        for (let i = 0; i < handSize; i += 1) {
+          state.hands[0].push(nextChar());
+          state.hands[1].push(nextChar());
+        }
+        if (!skipHash) updateShareHash();
+        syncUi();
+        render();
+      }
+
+      function boardToCanvas(x, y) {
+        const pad = 42;
+        const gap = (canvas.width - pad * 2) / (size - 1);
+        return { x: pad + x * gap, y: pad + y * gap, gap, pad };
+      }
+
+      function canvasToBoard(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (clientX - rect.left) * scaleX;
+        const y = (clientY - rect.top) * scaleY;
+        const { gap, pad } = boardToCanvas(0, 0);
+        const bx = Math.round((x - pad) / gap);
+        const by = Math.round((y - pad) / gap);
+        if (bx < 0 || by < 0 || bx >= size || by >= size) return null;
+        return { x: bx, y: by };
+      }
+
+      function inBounds(x, y) {
+        return x >= 0 && y >= 0 && x < size && y < size;
+      }
+
+      function collectAxis(x, y, dx, dy) {
+        const cells = [{ x, y, char: state.board[y][x].char }];
+        let nx = x + dx;
+        let ny = y + dy;
+        while (inBounds(nx, ny) && state.board[ny][nx]) {
+          cells.push({ x: nx, y: ny, char: state.board[ny][nx].char });
+          nx += dx;
+          ny += dy;
+        }
+        nx = x - dx;
+        ny = y - dy;
+        while (inBounds(nx, ny) && state.board[ny][nx]) {
+          cells.unshift({ x: nx, y: ny, char: state.board[ny][nx].char });
+          nx -= dx;
+          ny -= dy;
+        }
+        return cells;
+      }
+
+      function findWordsFromMove(x, y) {
+        const found = [];
+        for (const [dx, dy] of dirs) {
+          const cells = collectAxis(x, y, dx, dy);
+          const placedIndex = cells.findIndex((cell) => cell.x === x && cell.y === y);
+          if (cells.length < 2) continue;
+          for (let start = 0; start < cells.length; start += 1) {
+            for (let end = start + 1; end < cells.length && end < start + 4; end += 1) {
+              if (placedIndex < start || placedIndex > end) continue;
+              const slice = cells.slice(start, end + 1);
+              const word = slice.map((cell) => cell.char).join("");
+              const reversed = word.split("").reverse().join("");
+              const matched = wordScores.has(word) ? word : wordScores.has(reversed) ? reversed : "";
+              const key = `${matched}:${slice.map((cell) => `${cell.x},${cell.y}`).join("|")}`;
+              if (matched && !state.foundWords.has(key)) {
+                found.push({ word: matched, score: wordScores.get(matched), cells: slice, key });
+              }
+            }
+          }
+        }
+        return found;
+      }
+
+      function addLog(text) {
+        state.log.unshift(text);
+        state.log = state.log.slice(0, 8);
+      }
+
+      function placePiece(x, y) {
+        if (!inBounds(x, y) || state.board[y][x]) return false;
+        const player = state.turn;
+        const char = state.hands[player][state.selected[player]];
+        if (!char) return false;
+        state.board[y][x] = { char, owner: player };
+        state.cursor = { x, y };
+        state.moveCount += 1;
+        state.hands[player].splice(state.selected[player], 1);
+        if (state.selected[player] >= state.hands[player].length) {
+          state.selected[player] = Math.max(0, state.hands[player].length - 1);
+        }
+        refillHand(player);
+
+        const words = findWordsFromMove(x, y);
+        state.lastWords = words;
+        state.lastCells = words.flatMap((item) => item.cells);
+        if (words.length) {
+          const comboBonus = (words.length - 1) * 8;
+          const base = words.reduce((sum, item) => sum + item.score, 0);
+          const gained = base + comboBonus;
+          words.forEach((item) => state.foundWords.add(item.key));
+          state.scores[player] += gained;
+          phraseEl.textContent = `${players[player].name}：${words.map((item) => `「${item.word}」`).join("、")} +${gained}`;
+          addLog(`${players[player].name} ${words.map((item) => item.word).join(" / ")}  +${gained}`);
+        } else {
+          phraseEl.textContent = `${players[player].name}落下「${char}」，这手没成词。`;
+          addLog(`${players[player].name}落下「${char}」`);
+        }
+        state.turn = 1 - state.turn;
+        updateShareHash();
+        syncUi();
+        render();
+        return true;
+      }
+
+      function shuffleHand() {
+        const player = state.turn;
+        if (!state.hands[player].length) return;
+        const replaced = state.hands[player].splice(state.selected[player], 1, nextChar())[0];
+        state.scores[player] = Math.max(0, state.scores[player] - 5);
+        state.lastWords = [];
+        state.lastCells = [];
+        phraseEl.textContent = `${players[player].name}换掉「${replaced}」，扣 5 分。`;
+        addLog(`${players[player].name}换字：${replaced} -> ${state.hands[player][state.selected[player]]}`);
+        updateShareHash();
+        syncUi();
+        render();
+      }
+
+      function syncUi() {
+        const player = state.turn;
+        statusEl.textContent = `${players[player].name}落字`;
+        statusEl.style.color = players[player].color;
+        handLabelEl.textContent = `${players[player].name}手牌`;
+        handEl.innerHTML = "";
+        state.hands[player].forEach((char, index) => {
+          const btn = document.createElement("button");
+          btn.className = `tile player-${player}${index === state.selected[player] ? " active" : ""}`;
+          btn.type = "button";
+          btn.textContent = char;
+          btn.setAttribute("aria-label", `选择汉字${char}`);
+          btn.addEventListener("click", () => {
+            state.selected[player] = index;
+            syncUi();
+            render();
+          });
+          handEl.append(btn);
+        });
+        redScoreEl.textContent = `${state.scores[0]} 分`;
+        tealScoreEl.textContent = `${state.scores[1]} 分`;
+        wordCountEl.textContent = `${state.foundWords.size} 个`;
+        logEl.innerHTML = "";
+        state.log.forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          logEl.append(li);
+        });
+      }
+
+      function drawBackground() {
+        const grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        grd.addColorStop(0, "#f4d69a");
+        grd.addColorStop(0.55, "#e8bc6e");
+        grd.addColorStop(1, "#dca653");
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(255,255,255,0.18)";
+        for (let i = 0; i < 12; i += 1) {
+          ctx.beginPath();
+          ctx.arc(70 + i * 58, 60 + (i % 3) * 190, 45, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function render() {
+        drawBackground();
+        const { gap, pad } = boardToCanvas(0, 0);
+        ctx.save();
+        ctx.lineWidth = 1.4;
+        ctx.strokeStyle = "rgba(68, 43, 19, 0.72)";
+        for (let i = 0; i < size; i += 1) {
+          const p = pad + i * gap;
+          ctx.beginPath();
+          ctx.moveTo(pad, p);
+          ctx.lineTo(canvas.width - pad, p);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(p, pad);
+          ctx.lineTo(p, canvas.height - pad);
+          ctx.stroke();
+        }
+
+        const stars = [
+          [3, 3],
+          [11, 3],
+          [7, 7],
+          [3, 11],
+          [11, 11]
+        ];
+        ctx.fillStyle = "rgba(62, 38, 16, 0.78)";
+        stars.forEach(([x, y]) => {
+          const p = boardToCanvas(x, y);
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        const highlighted = new Set(state.lastCells.map((cell) => `${cell.x},${cell.y}`));
+        highlighted.forEach((key) => {
+          const [x, y] = key.split(",").map(Number);
+          const p = boardToCanvas(x, y);
+          ctx.fillStyle = "rgba(255, 252, 215, 0.82)";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, gap * 0.44, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        const cursor = boardToCanvas(state.cursor.x, state.cursor.y);
+        ctx.strokeStyle = players[state.turn].color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(cursor.x - gap * 0.38, cursor.y - gap * 0.38, gap * 0.76, gap * 0.76);
+
+        for (let y = 0; y < size; y += 1) {
+          for (let x = 0; x < size; x += 1) {
+            const piece = state.board[y][x];
+            if (!piece) continue;
+            const p = boardToCanvas(x, y);
+            const color = players[piece.owner].color;
+            ctx.beginPath();
+            ctx.fillStyle = "#fff9ef";
+            ctx.strokeStyle = highlighted.has(`${x},${y}`) ? "#d39b25" : color;
+            ctx.lineWidth = highlighted.has(`${x},${y}`) ? 4 : 3;
+            ctx.arc(p.x, p.y, gap * 0.39, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = color;
+            ctx.font = `900 ${Math.floor(gap * 0.42)}px "Noto Sans SC", sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(piece.char, p.x, p.y + 1);
+          }
+        }
+
+        ctx.restore();
+      }
+
+      function moveCursor(dx, dy) {
+        state.cursor.x = Math.max(0, Math.min(size - 1, state.cursor.x + dx));
+        state.cursor.y = Math.max(0, Math.min(size - 1, state.cursor.y + dy));
+        render();
+      }
+
+      function serializeState() {
+        const pieces = [];
+        for (let y = 0; y < size; y += 1) {
+          for (let x = 0; x < size; x += 1) {
+            const piece = state.board[y][x];
+            if (piece) pieces.push([x, y, piece.char, piece.owner]);
+          }
+        }
+        return {
+          v: 3,
+          g: state.seed,
+          p: pieces,
+          h: state.hands,
+          s: state.selected,
+          c: [state.cursor.x, state.cursor.y],
+          sc: state.scores,
+          t: state.turn,
+          m: state.moveCount,
+          b: state.bagIndex,
+          f: [...state.foundWords],
+          l: state.log
+        };
+      }
+
+      function updateShareHash() {
+        const json = JSON.stringify(serializeState());
+        const encoded = btoa(unescape(encodeURIComponent(json)));
+        history.replaceState(null, "", `${location.pathname}#s=${encoded}`);
+      }
+
+      function loadFromHash() {
+        if (!location.hash.startsWith("#s=")) return false;
+        try {
+          const raw = decodeURIComponent(escape(atob(location.hash.slice(3))));
+          const data = JSON.parse(raw);
+          resetSeed(typeof data.g === "string" ? data.g : "legacy");
+          state.board = makeBoard();
+          for (const [x, y, char, owner] of data.p || []) {
+            if (inBounds(x, y)) state.board[y][x] = { char, owner: owner === 1 ? 1 : 0 };
+          }
+          state.hands = Array.isArray(data.h) ? data.h : [[], []];
+          state.selected = Array.isArray(data.s) ? data.s : [0, 0];
+          state.cursor = Array.isArray(data.c) ? { x: data.c[0], y: data.c[1] } : { x: 7, y: 7 };
+          state.scores = Array.isArray(data.sc) ? data.sc : [0, 0];
+          state.turn = data.t === 1 ? 1 : 0;
+          state.moveCount = Number(data.m) || 0;
+          state.bagIndex = Number(data.b) || 0;
+          state.foundWords = new Set(Array.isArray(data.f) ? data.f : []);
+          state.lastWords = [];
+          state.lastCells = [];
+          state.log = Array.isArray(data.l) ? data.l.slice(0, 8) : [];
+          refillHand(0);
+          refillHand(1);
+          syncUi();
+          render();
+          return true;
+        } catch {
+          return false;
+        }
+      }
+
+      async function copyShareLink() {
+        updateShareHash();
+        try {
+          await navigator.clipboard.writeText(location.href);
+          phraseEl.textContent = "战局链接已复制，发给对方就能接着下。";
+        } catch {
+          phraseEl.textContent = "复制失败，可以手动复制地址栏链接。";
+        }
+      }
+
+      canvas.addEventListener("pointerdown", (event) => {
+        const pt = canvasToBoard(event.clientX, event.clientY);
+        if (!pt) return;
+        state.cursor = pt;
+        placePiece(pt.x, pt.y);
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key >= "1" && event.key <= "7") {
+          state.selected[state.turn] = Math.min(Number(event.key) - 1, state.hands[state.turn].length - 1);
+          syncUi();
+          render();
+          return;
+        }
+        if (event.key === "ArrowLeft") {
+          event.preventDefault();
+          moveCursor(-1, 0);
+        } else if (event.key === "ArrowRight") {
+          event.preventDefault();
+          moveCursor(1, 0);
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          moveCursor(0, -1);
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          moveCursor(0, 1);
+        } else if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          placePiece(state.cursor.x, state.cursor.y);
+        } else if (event.key.toLowerCase() === "r") {
+          resetGame();
+        } else if (event.key.toLowerCase() === "x") {
+          shuffleHand();
+        } else if (event.key.toLowerCase() === "f") {
+          toggleFullscreen();
+        }
+      });
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.();
+        } else {
+          document.exitFullscreen?.();
+        }
+      }
+
+      restartBtn.addEventListener("click", () => resetGame());
+      shuffleBtn.addEventListener("click", shuffleHand);
+      shareBtn.addEventListener("click", copyShareLink);
+      fullscreenBtn.addEventListener("click", toggleFullscreen);
+
+      window.advanceTime = (ms) => {
+        state.tick += ms;
+        render();
+      };
+
+      window.render_game_to_text = () => {
+        const pieces = [];
+        for (let y = 0; y < size; y += 1) {
+          for (let x = 0; x < size; x += 1) {
+            const piece = state.board[y][x];
+            if (piece) pieces.push({ x, y, char: piece.char, owner: players[piece.owner].name });
+          }
+        }
+        return JSON.stringify({
+          coordinateSystem: "15x15 grid, origin top-left, x right, y down",
+          mode: "two-player-share-link-word-score",
+          turn: players[state.turn].name,
+          scores: { red: state.scores[0], teal: state.scores[1] },
+          cursor: state.cursor,
+          selectedChar: state.hands[state.turn][state.selected[state.turn]],
+          currentHand: state.hands[state.turn],
+          moveCount: state.moveCount,
+          foundWordCount: state.foundWords.size,
+          themeWords: [...state.themeWords],
+          lastWords: state.lastWords.map((item) => ({ word: item.word, score: item.score })),
+          pieces
+        });
+      };
+
+      window.__hanziWordGameTest = {
+        forceWords() {
+          resetGame(true);
+          state.turn = 0;
+          state.hands[0][state.selected[0]] = "春";
+          placePiece(7, 7);
+          state.turn = 1;
+          state.hands[1][state.selected[1]] = "风";
+          placePiece(8, 7);
+          return window.render_game_to_text();
+        },
+        encodedState() {
+          updateShareHash();
+          return location.hash;
+        }
+      };
+
+      if (!loadFromHash()) {
+        resetGame();
+      }
+    </script>
+  </body>
+</html>

@@ -434,6 +434,16 @@ main {
     linear-gradient(150deg, #18214b, #1e2f67);
 }
 
+.cover-game-3 {
+  background:
+    linear-gradient(90deg, rgba(33, 26, 22, 0.18) 1px, transparent 1px),
+    linear-gradient(rgba(33, 26, 22, 0.18) 1px, transparent 1px),
+    radial-gradient(circle at 30% 32%, #fff8ec 0 10%, transparent 10.5%),
+    radial-gradient(circle at 68% 62%, #211a16 0 10%, transparent 10.5%),
+    linear-gradient(135deg, #e8bc6e, #f5dc9e);
+  background-size: 28px 28px, 28px 28px, 100% 100%, 100% 100%, 100% 100%;
+}
+
 .project-content {
   padding: 1rem;
 }
