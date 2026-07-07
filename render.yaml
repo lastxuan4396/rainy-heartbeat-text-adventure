@@ -2,14 +2,12 @@ services:
   - type: web
     name: rainy-heartbeat-text-adventure
     runtime: static
-    plan: free
     branch: main
     buildCommand: echo "No build step required"
     staticPublishPath: ./text_adventure_love
   - type: web
     name: hanzi-word-duel
     runtime: static
-    plan: free
     branch: main
     buildCommand: echo "No build step required"
     staticPublishPath: ./content_hub_site
