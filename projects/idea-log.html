@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="想法日志页项目说明：内容归档、标签体系、长期更新机制。" />
+    <title>想法日志页 | 项目页</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../detail.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="topbar">
+        <a class="back-link" href="../index.html#web-projects">← 返回首页</a>
+        <span class="chip">网页项目</span>
+      </div>
+
+      <article class="article-shell">
+        <header class="hero">
+          <p class="meta">Astro / Markdown · 规划中</p>
+          <h1>想法日志页</h1>
+        </header>
+
+        <div class="content">
+          <p>
+            这是一个偏内容型页面模板，专门解决“灵感很多但散落各处”的问题。核心是让想法沉淀，而不是被社媒流逝。
+          </p>
+
+          <h2>核心设计</h2>
+          <ul>
+            <li>按主题标签归档（创作、网页、游戏、复盘）</li>
+            <li>每篇内容有“可执行下一步”</li>
+            <li>支持从短笔记升级为长文</li>
+          </ul>
+
+          <h2>内容策略接入</h2>
+          <p>
+            每周至少发布 2 条短内容，再从数据里挑 1 条延展成长文，既保证频率，又保证深度。
+          </p>
+
+          <h2 id="roadmap">下一步路线</h2>
+          <ul>
+            <li>加入筛选器（按标签、时间、热度）</li>
+            <li>加入相关文章推荐</li>
+            <li>支持 RSS 输出和邮件摘要</li>
+          </ul>
+
+          <div class="side-note">
+            这个模块会成为网站的“引擎层”：持续增长流量和信任的关键区。
+          </div>
+
+          <div class="links-row">
+            <a class="btn btn-primary" href="../index.html#ideas">查看想法列表</a>
+            <a class="btn btn-ghost" href="../index.html#subscribe">订阅更新</a>
+          </div>
+        </div>
+      </article>
+    </main>
+  </body>
+</html>

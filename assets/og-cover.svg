@@ -1,0 +1,21 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF3D8"/>
+      <stop offset="1" stop-color="#D7F1EF"/>
+    </linearGradient>
+    <linearGradient id="badge" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#C9431F"/>
+      <stop offset="1" stop-color="#0F8E8B"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1030" cy="80" r="210" fill="#F2B42C" fill-opacity="0.2"/>
+  <circle cx="140" cy="560" r="220" fill="#0F8E8B" fill-opacity="0.16"/>
+  <rect x="96" y="92" width="288" height="60" rx="30" fill="#1D1A16"/>
+  <text x="144" y="130" fill="#FFFFFF" font-family="Noto Sans SC, sans-serif" font-size="28" font-weight="700">MILKPAD</text>
+  <text x="96" y="280" fill="#1D1A16" font-family="Noto Sans SC, sans-serif" font-size="68" font-weight="900">垫饥的饭</text>
+  <text x="96" y="356" fill="#5B5248" font-family="Noto Sans SC, sans-serif" font-size="34" font-weight="500">想法 · 网页 · 游戏</text>
+  <rect x="96" y="418" width="460" height="66" rx="16" fill="url(#badge)"/>
+  <text x="132" y="462" fill="#FFFFFF" font-family="Noto Sans SC, sans-serif" font-size="32" font-weight="700">is.gd/dianjidefanplus2</text>
+</svg>
